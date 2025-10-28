@@ -4,56 +4,32 @@ import dotenv from "dotenv";
 import { Resend } from "resend";
 
 dotenv.config();
-
 const app = express();
 app.use(express.json());
 
-// ✅ Allowed origins for your frontend and localhost
+// ✅ CORS config — must come BEFORE routes
 const allowedOrigins = [
   "https://portfolio-frontend-gamma-five.vercel.app",
   "http://localhost:5173",
 ];
 
-// ✅ Use CORS middleware (handles most cases)
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// ✅ Handle all OPTIONS preflight requests manually
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  }
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
-  );
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-  next();
-});
+// ✅ Handle all preflight requests globally
+app.options("*", cors());
 
-// ✅ Root route (for health check)
+// ✅ Root route
 app.get("/", (req, res) => {
   res.send("Portfolio backend is running ✅");
 });
 
-// ✅ Mail route
+// ✅ Contact form route
 app.post("/send-message", async (req, res) => {
   try {
     const { name, email, message } = req.body;
@@ -83,6 +59,6 @@ app.post("/send-message", async (req, res) => {
   }
 });
 
-// ✅ Start the server
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
