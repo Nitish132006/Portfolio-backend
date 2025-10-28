@@ -8,34 +8,32 @@ const app = express();
 
 app.use(express.json());
 
-// ✅ FIXED: Proper CORS setup
+// ✅ CORS setup
 app.use(
   cors({
     origin: [
-      "http://localhost:5173", // local dev
-      "https://portfolio-frontend-gamma-five.vercel.app", // deployed frontend
+      "http://localhost:5173",
+      "https://portfolio-frontend-gamma-five.vercel.app",
     ],
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// ✅ Handle preflight requests explicitly
-app.options("*", cors());
+// ✅ Handle preflight specifically for your POST route
+app.options("/send-message", cors());
 
 // ✅ Test route
 app.get("/", (req, res) => {
   res.send("Portfolio backend is running ✅");
 });
 
-// ✅ Send message route
+// ✅ Mail route
 app.post("/send-message", async (req, res) => {
   try {
     const { name, email, message } = req.body;
     if (!name || !email || !message) {
-      return res
-        .status(400)
-        .json({ success: false, error: "All fields are required" });
+      return res.status(400).json({ success: false, error: "All fields required" });
     }
 
     const resend = new Resend(process.env.RESEND_API_KEY);
@@ -46,7 +44,7 @@ app.post("/send-message", async (req, res) => {
       html: `<p><strong>Email:</strong> ${email}</p><p>${message}</p>`,
     });
 
-    return res.json({ success: true });
+    res.json({ success: true });
   } catch (err) {
     console.error("Resend error:", err);
     res.status(500).json({ success: false, error: "Failed to send message" });
