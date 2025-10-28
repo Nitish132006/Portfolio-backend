@@ -8,29 +8,35 @@ const app = express();
 
 app.use(express.json());
 
-// ✅ CORS fix
+// ✅ FIXED: Proper CORS setup
 app.use(
   cors({
     origin: [
-      "http://localhost:5173", // local frontend (dev)
-      "https://portfolio-frontend-gamma-five.vercel.app", // your deployed Vercel site
+      "http://localhost:5173", // local dev
+      "https://portfolio-frontend-gamma-five.vercel.app", // deployed frontend
     ],
-    methods: ["GET", "POST"],
-    credentials: true,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// ✅ Basic test route
+// ✅ Handle preflight requests explicitly
+app.options("*", cors());
+
+// ✅ Test route
 app.get("/", (req, res) => {
   res.send("Portfolio backend is running ✅");
 });
 
-// ✅ Send message route (make sure this exists)
+// ✅ Send message route
 app.post("/send-message", async (req, res) => {
   try {
     const { name, email, message } = req.body;
-    if (!name || !email || !message)
-      return res.status(400).json({ success: false, error: "All fields required" });
+    if (!name || !email || !message) {
+      return res
+        .status(400)
+        .json({ success: false, error: "All fields are required" });
+    }
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
